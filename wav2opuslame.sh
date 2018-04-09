@@ -40,7 +40,7 @@ if test ! -r "$REC_DIR/$1" || test ! -w "$OUT_DIR/$2"; then
 fi
 
 if [ "$ERR_STATUS" ]; then
-    >&2 echo "Errors found. See log output for details."
+    >&2 echo "Errors found. See output above for details."
     exit 1
 fi
 
