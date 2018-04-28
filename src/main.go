@@ -14,7 +14,7 @@ type Configuration struct {
 	RecordDirectory string
 	OutputDirectory string
 	LameBitrate     string
-	OpusBitrate     string
+	OpusBitrate     int
 }
 
 var (
@@ -23,12 +23,12 @@ var (
 
 func readConf() *Configuration {
 	viper.AddConfigPath(".")
-	viper.SetConfigName("config.conf")
-	viper.SetConfigType("conf")
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		fmt.Printf("%v\n", err)
+		fmt.Printf("Read Error: %v\n", err)
 	}
 
 	conf := &Configuration{}
