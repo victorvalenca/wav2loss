@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"runtime"
 
 	"github.com/spf13/viper"
 )
@@ -43,9 +44,17 @@ func readConf() *Configuration {
 // Initialization routine
 func init() {
 	conf = readConf()
+	systemCheck()
+}
+
+func systemCheck() {
+	fmt.Println("--- WAV2LOSS ---")
+	var osVersion = runtime.GOOS
+	fmt.Printf("I am running on: %s\n", osVersion)
+	fmt.Printf("%+v\n", conf)
 }
 
 // Main program
 func main() {
-	fmt.Printf("%+v\n", conf)
+
 }
