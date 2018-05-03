@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -42,6 +43,21 @@ func readConf() *Configuration {
 		fmt.Printf("Unable to parse configuration file into struct. %v", err)
 	}
 
+	// Parse potential envars
+	switch conf.RecordDirectory[0] {
+	case '%':
+		fallthrough
+	case '$':
+		conf.RecordDirectory = os.Getenv(strings.Trim(conf.RecordDirectory, "$%"))
+	}
+
+	switch conf.OutputDirectory[0] {
+	case '%':
+		fallthrough
+	case '$':
+		conf.OutputDirectory = os.Getenv(strings.Trim(conf.OutputDirectory, "$%"))
+	}
+
 	return conf
 }
 
@@ -73,8 +89,6 @@ func systemCheck() {
 
 // Configuration check routine
 func checkConf() bool {
-
-	// TODO: Parse envvars to full path
 	switch conf.RecordDirectory[0] {
 	case '$':
 		fmt.Printf("I am dealing with a UNIX-style envvar, use full path please\n")
@@ -97,11 +111,6 @@ func main() {
 
 	opusTest.Stdout, lameTest.Stdout = os.Stdout, os.Stdout
 	opusTest.Stderr, lameTest.Stderr = os.Stderr, os.Stderr
-
-	pass := checkConf()
-	if !pass {
-		fmt.Printf("Configuration check failed\n")
-	}
 	// opusTest.Run()
 	// lameTest.Run()
 
