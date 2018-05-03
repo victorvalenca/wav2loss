@@ -1,3 +1,4 @@
+// +build amd64
 package main
 
 import (
@@ -33,6 +34,7 @@ func readConf() *Configuration {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 
+	// Read in YAML file
 	err := viper.ReadInConfig()
 	if err != nil {
 		fmt.Printf("Read Error: %v\n", err)
@@ -49,7 +51,6 @@ func readConf() *Configuration {
 	case '$', '%':
 		conf.RecordDirectory = os.Getenv(strings.Trim(conf.RecordDirectory, "$%"))
 	}
-
 	switch conf.OutputDirectory[0] {
 	case '$', '%':
 		conf.OutputDirectory = os.Getenv(strings.Trim(conf.OutputDirectory, "$%"))
@@ -74,6 +75,7 @@ func systemCheck() bool {
 
 	fmt.Printf("I am running on: %s\n", osVersion)
 
+	// Look for executables for opus and lame
 	res, err := exec.LookPath("opusenc")
 	if err != nil {
 		fmt.Printf("Could not find opusenc in PATH\n")
@@ -81,12 +83,12 @@ func systemCheck() bool {
 	}
 	opusBin = res
 
-	res2, err := exec.LookPath("lame")
+	res, err = exec.LookPath("lame")
 	if err != nil {
 		fmt.Printf("Could not find LAME in PATH\n")
 		return false
 	}
-	lameBin = res2
+	lameBin = res
 	fmt.Printf("Configuration Check passed\n---\n")
 	return true
 }
@@ -104,7 +106,7 @@ func main() {
 	t := time.Now()
 	tFormatted := t.UTC().Format("2006-01-02")
 	trimFile := strings.Replace(conf.Title, " ", "_", -1)
-	outFile := trimFile + "_" + tFormatted
+	outFile := conf.OutputDirectory + "\\" + trimFile + "_" + tFormatted
 	inFile := conf.RecordDirectory + "\\" + os.Args[1]
 
 	opusTest := exec.Command(opusBin,
@@ -112,7 +114,7 @@ func main() {
 		"--title", "\""+conf.Title+"\"",
 		"--artist", "\""+conf.Artist+"\"",
 		"--album", "\""+conf.Album+"\"",
-		"--date", t.UTC().Format("2006"),
+		"--date", "\""+t.UTC().Format("2006")+"\"",
 		inFile,
 		outFile+".opus")
 
@@ -122,16 +124,16 @@ func main() {
 		"--tt", "\""+conf.Title+"\"",
 		"--ta", "\""+conf.Artist+"\"",
 		"--tl", "\""+conf.Album+"\"",
-		"--ty", tFormatted,
+		"--ty", "\""+tFormatted+"\"",
 		inFile,
 		outFile+".mp3")
-	fmt.Printf("LAME ARGS: %v\n", lameTest.Args)
-	fmt.Printf("OPUSENC ARGS: %v\n", opusTest.Args)
 
 	opusTest.Stdout, lameTest.Stdout = os.Stdout, os.Stdout
 	opusTest.Stderr, lameTest.Stderr = os.Stderr, os.Stderr
 
+	fmt.Printf("OPUSENC ARGS: %v\n", opusTest.Args)
 	opusTest.Run()
+	fmt.Printf("LAME ARGS: %v\n", lameTest.Args)
 	lameTest.Run()
 
 }
