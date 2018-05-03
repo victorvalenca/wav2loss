@@ -63,6 +63,7 @@ func init() {
 	conf = readConf()
 	pass := systemCheck()
 	if !pass {
+		fmt.Printf("Configuration Check failed. Exiting...\n---\n")
 		os.Exit(1)
 	}
 }
@@ -105,8 +106,6 @@ func main() {
 	trimFile := strings.Replace(conf.Title, " ", "_", -1)
 	outFile := trimFile + "_" + tFormatted
 	inFile := conf.RecordDirectory + "\\" + os.Args[1]
-
-	// fmt.Printf("opus:\t%s\nLAME:\t%s\n", opusBin, lameBin)
 
 	opusTest := exec.Command(opusBin,
 		"--bitrate", conf.OpusBitrate,
