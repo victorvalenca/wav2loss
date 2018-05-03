@@ -45,16 +45,12 @@ func readConf() *Configuration {
 
 	// Parse potential envars
 	switch conf.RecordDirectory[0] {
-	case '%':
-		fallthrough
-	case '$':
+	case '$', '%':
 		conf.RecordDirectory = os.Getenv(strings.Trim(conf.RecordDirectory, "$%"))
 	}
 
 	switch conf.OutputDirectory[0] {
-	case '%':
-		fallthrough
-	case '$':
+	case '$', '%':
 		conf.OutputDirectory = os.Getenv(strings.Trim(conf.OutputDirectory, "$%"))
 	}
 
