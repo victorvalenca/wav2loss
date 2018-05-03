@@ -110,10 +110,9 @@ func main() {
 
 	opusTest := exec.Command(opusBin,
 		"--bitrate", conf.OpusBitrate,
-		"--add-id3v2",
 		"--title", "\""+conf.Title+"\"",
 		"--artist", "\""+conf.Artist+"\"",
-		"--albu,", "\""+conf.Album+"\"",
+		"--album", "\""+conf.Album+"\"",
 		"--date", t.UTC().Format("2006"),
 		inFile,
 		outFile+".opus")
@@ -132,7 +131,8 @@ func main() {
 
 	opusTest.Stdout, lameTest.Stdout = os.Stdout, os.Stdout
 	opusTest.Stderr, lameTest.Stderr = os.Stderr, os.Stderr
-	// opusTest.Run()
-	// lameTest.Run()
+
+	opusTest.Run()
+	lameTest.Run()
 
 }
