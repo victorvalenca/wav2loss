@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -18,7 +19,7 @@ type Configuration struct {
 	RecordDirectory string
 	OutputDirectory string
 	LameBitrate     string
-	OpusBitrate     int
+	OpusBitrate     string
 }
 
 var (
@@ -60,50 +61,74 @@ func readConf() *Configuration {
 // Initialization routine
 func init() {
 	conf = readConf()
-	systemCheck()
+	pass := systemCheck()
+	if !pass {
+		os.Exit(1)
+	}
 }
 
-func systemCheck() {
+func systemCheck() bool {
 	fmt.Println("--- WAV2LOSS PRE-RUN CHECK ---")
 	var osVersion = runtime.GOOS
 
 	fmt.Printf("I am running on: %s\n", osVersion)
-	fmt.Printf("%+v\n", conf)
 
 	res, err := exec.LookPath("opusenc")
 	if err != nil {
 		fmt.Printf("Could not find opusenc in PATH\n")
+		return false
 	}
 	opusBin = res
 
 	res2, err := exec.LookPath("lame")
 	if err != nil {
 		fmt.Printf("Could not find LAME in PATH\n")
+		return false
 	}
 	lameBin = res2
-}
-
-// Configuration check routine
-func checkConf() bool {
-	switch conf.RecordDirectory[0] {
-	case '$':
-		fmt.Printf("I am dealing with a UNIX-style envvar, use full path please\n")
-		return false
-	case '%':
-		fmt.Printf("I am dealing with a Windows-style envvar, use full path please\n")
-		return false
-	default:
-		return true
-	}
+	fmt.Printf("Configuration Check passed\n---\n")
+	return true
 }
 
 // Main program
 func main() {
-	// TODO: Test executables
 
-	fmt.Printf("opus:\t%s\nLAME:\t%s\n", opusBin, lameBin)
-	opusTest := exec.Command(opusBin, "--version")
-	lameTest := exec.Command(lameBin, "--version")
+	if len(os.Args) < 2 {
+		fmt.Printf("No File Given. Exiting...\n" +
+			"USAGE: wav2loss filename_in_recording_directory.wav")
+		os.Exit(1)
+	}
+
+	// opus/lame args: [options] input output
+	t := time.Now()
+	tFormatted := t.UTC().Format("2006-01-02")
+	trimFile := strings.Replace(conf.Title, " ", "_", -1)
+	outFile := trimFile + "_" + tFormatted
+	inFile := conf.RecordDirectory + "\\" + os.Args[1]
+
+	// fmt.Printf("opus:\t%s\nLAME:\t%s\n", opusBin, lameBin)
+
+	opusTest := exec.Command(opusBin,
+		"--bitrate", conf.OpusBitrate,
+		"--add-id3v2",
+		"--title", "\""+conf.Title+"\"",
+		"--artist", "\""+conf.Artist+"\"",
+		"--albu,", "\""+conf.Album+"\"",
+		"--date", t.UTC().Format("2006"),
+		inFile,
+		outFile+".opus")
+
+	lameTest := exec.Command(lameBin,
+		"-"+conf.LameBitrate,
+		"--add-id3v2",
+		"--tt", "\""+conf.Title+"\"",
+		"--ta", "\""+conf.Artist+"\"",
+		"--tl", "\""+conf.Album+"\"",
+		"--ty", tFormatted,
+		inFile,
+		outFile+".mp3")
+	fmt.Printf("LAME ARGS: %v\n", lameTest.Args)
+	fmt.Printf("OPUSENC ARGS: %v\n", opusTest.Args)
 
 	opusTest.Stdout, lameTest.Stdout = os.Stdout, os.Stdout
 	opusTest.Stderr, lameTest.Stderr = os.Stderr, os.Stderr
