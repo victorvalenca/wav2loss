@@ -1,0 +1,20 @@
+ARTIST: "artist"
+TITLE: "show title"
+ALBUM: "my show name"
+
+# INPUT/OUTPUT DIRECTORIES (Environment variables or full path supported)
+RECORDDIRECTORY: "%WINDOWSENVVAREXAMPLE%"
+OUTPUTDIRECTORY: $ALSOWORKSONUNIX
+
+########## BITRATE OPTIONS #########
+#
+# USE VBR AND NUMBER FROM 0 TO 9.999
+# DEFAULT VALUE IS V2
+#
+# --------- OPUS OPTIONS -----------
+#
+# DEFAULT VALUE IS 192
+#
+####################################
+LAMEBITRATE: V2
+OPUSBITRATE: 192
