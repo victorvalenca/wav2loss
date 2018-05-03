@@ -55,16 +55,6 @@ func systemCheck() {
 	fmt.Printf("I am running on: %s\n", osVersion)
 	fmt.Printf("%+v\n", conf)
 
-	// This is skeleton, might not be needed if LAME and opusenc are under the same name in every OS
-	switch osVersion {
-	case "windows": // Look for windows executables for opusenc and lame
-		break
-	case "darwin": // Look for macOS executables for opusenc and lame
-		break
-	default: // Some flavor of linux is here, look for opusenc and lame
-		break
-	}
-
 	opusBin, err := exec.LookPath("opusenc")
 	if err != nil {
 		fmt.Printf("Could not find opusenc in PATH\n")
@@ -82,5 +72,7 @@ func systemCheck() {
 
 // Main program
 func main() {
+	// TODO: Check config file parameters
+	// TODO: Test executables
 
 }
