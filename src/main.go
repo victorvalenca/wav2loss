@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -106,8 +107,8 @@ func main() {
 	t := time.Now()
 	tFormatted := t.UTC().Format("2006-01-02")
 	trimFile := strings.Replace(conf.Title, " ", "_", -1)
-	outFile := conf.OutputDirectory + "\\" + trimFile + "_" + tFormatted
-	inFile := conf.RecordDirectory + "\\" + os.Args[1]
+	outFile := filepath.Join(conf.OutputDirectory, trimFile+"_"+tFormatted)
+	inFile := filepath.Join(conf.RecordDirectory, os.Args[1])
 
 	opusTest := exec.Command(opusBin,
 		"--bitrate", conf.OpusBitrate,
@@ -132,8 +133,8 @@ func main() {
 	opusTest.Stderr, lameTest.Stderr = os.Stderr, os.Stderr
 
 	fmt.Printf("OPUSENC ARGS: %v\n", opusTest.Args)
-	opusTest.Run()
+	// opusTest.Run()
 	fmt.Printf("LAME ARGS: %v\n", lameTest.Args)
-	lameTest.Run()
+	// lameTest.Run()
 
 }
