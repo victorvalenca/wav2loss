@@ -100,22 +100,21 @@ func systemCheck() bool {
 
 // Main program
 func main() {
+	flag.Parse()
 
-	if len(os.Args) < 2 {
+	var args = flag.Args()
+	if len(args) < 1 {
 		fmt.Printf("No File Given. Exiting...\n" +
 			"USAGE: wav2loss filename_in_recording_directory.wav")
 		os.Exit(1)
 	}
-
-	// Check for "simulation" mode flag
-	flag.Parse()
 
 	// opus/lame args: [options] input output
 	t := time.Now()
 	tFormatted := t.UTC().Format("2006-01-02")
 	trimFile := strings.Replace(conf.Title, " ", "_", -1)
 	outFile := filepath.Join(conf.OutputDirectory, trimFile+"_"+tFormatted)
-	inFile := filepath.Join(conf.RecordDirectory, os.Args[1])
+	inFile := filepath.Join(conf.RecordDirectory, args[0])
 
 	opusTest := exec.Command(opusBin,
 		"--bitrate", conf.OpusBitrate,
@@ -139,6 +138,7 @@ func main() {
 	opusTest.Stdout, lameTest.Stdout = os.Stdout, os.Stdout
 	opusTest.Stderr, lameTest.Stderr = os.Stderr, os.Stderr
 
+	// Check for "simulation" mode flag
 	if !*simulate {
 		err := opusTest.Run()
 		if err != nil {
