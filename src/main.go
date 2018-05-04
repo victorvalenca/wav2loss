@@ -1,8 +1,11 @@
 // +build amd64
+
 package main
 
 import (
+	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -25,9 +28,10 @@ type Configuration struct {
 }
 
 var (
-	conf    *Configuration
-	opusBin string
-	lameBin string
+	conf     *Configuration
+	opusBin  string
+	lameBin  string
+	simulate = flag.Bool("simulate", false, "if set, no underlying commands will be run")
 )
 
 func readConf() *Configuration {
@@ -103,6 +107,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Check for "simulation" mode flag
+	flag.Parse()
+
 	// opus/lame args: [options] input output
 	t := time.Now()
 	tFormatted := t.UTC().Format("2006-01-02")
@@ -132,9 +139,19 @@ func main() {
 	opusTest.Stdout, lameTest.Stdout = os.Stdout, os.Stdout
 	opusTest.Stderr, lameTest.Stderr = os.Stderr, os.Stderr
 
-	fmt.Printf("OPUSENC ARGS: %v\n", opusTest.Args)
-	// opusTest.Run()
-	fmt.Printf("LAME ARGS: %v\n", lameTest.Args)
-	// lameTest.Run()
+	if !*simulate {
+		err := opusTest.Run()
+		if err != nil {
+			log.Printf("wut, couldn't run opusenc :( %v\n", err)
+		}
+		err = lameTest.Run()
+		if err != nil {
+			log.Printf("wut, couldn't run lame :( %v\n", err)
+		}
 
+	} else {
+		fmt.Printf("SIMULATION MODE, PRINTING ARGUMENTS INSTEAD\n")
+		fmt.Printf("OPUSENC ARGS: %v\n", opusTest.Args)
+		fmt.Printf("LAME ARGS: %v\n", lameTest.Args)
+	}
 }
