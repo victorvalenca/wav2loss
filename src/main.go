@@ -105,7 +105,7 @@ func main() {
 	var args = flag.Args()
 	if len(args) < 1 {
 		fmt.Printf("No File Given. Exiting...\n" +
-			"USAGE: wav2loss filename_in_recording_directory.wav")
+			"USAGE: wav2loss [-simulate] filename_in_recording_directory.wav")
 		os.Exit(1)
 	}
 
@@ -115,6 +115,12 @@ func main() {
 	trimFile := strings.Replace(conf.Title, " ", "_", -1)
 	outFile := filepath.Join(conf.OutputDirectory, trimFile+"_"+tFormatted)
 	inFile := filepath.Join(conf.RecordDirectory, args[0])
+
+	// Check if WAV filename exists
+	if _, err := os.Stat(inFile); os.IsNotExist(err) {
+		fmt.Printf("The file '%s' does not exist in the recording directory.\n", args[0])
+		os.Exit(1)
+	}
 
 	opusTest := exec.Command(opusBin,
 		"--bitrate", conf.OpusBitrate,
@@ -138,15 +144,15 @@ func main() {
 	opusTest.Stdout, lameTest.Stdout = os.Stdout, os.Stdout
 	opusTest.Stderr, lameTest.Stderr = os.Stderr, os.Stderr
 
-	// Check for "simulation" mode flag
+	// Check for "simulation" mode flag, otherwise execute in sequence
 	if !*simulate {
 		err := opusTest.Run()
 		if err != nil {
-			log.Printf("wut, couldn't run opusenc :( %v\n", err)
+			log.Printf("I couldn't run opusenc :(\n%v\n", err)
 		}
 		err = lameTest.Run()
 		if err != nil {
-			log.Printf("wut, couldn't run lame :( %v\n", err)
+			log.Printf("I couldn't run lame :(\n%v\n", err)
 		}
 
 	} else {
