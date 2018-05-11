@@ -116,28 +116,22 @@ func main() {
 	outFile := filepath.Join(conf.OutputDirectory, trimFile+"_"+tFormatted)
 	inFile := filepath.Join(conf.RecordDirectory, args[0])
 
-	// Check if WAV filename exists
-	if _, err := os.Stat(inFile); os.IsNotExist(err) {
-		fmt.Printf("The file '%s' does not exist in the recording directory.\n", args[0])
-		os.Exit(1)
-	}
-
 	opusTest := exec.Command(opusBin,
 		"--bitrate", conf.OpusBitrate,
-		"--title", "\""+conf.Title+"\"",
-		"--artist", "\""+conf.Artist+"\"",
-		"--album", "\""+conf.Album+"\"",
-		"--date", "\""+t.UTC().Format("2006")+"\"",
+		"--title", conf.Title,
+		"--artist", conf.Artist,
+		"--album", conf.Album,
+		"--date", t.UTC().Format("2006"),
 		inFile,
 		outFile+".opus")
 
 	lameTest := exec.Command(lameBin,
 		"-"+conf.LameBitrate,
 		"--add-id3v2",
-		"--tt", "\""+conf.Title+"\"",
-		"--ta", "\""+conf.Artist+"\"",
-		"--tl", "\""+conf.Album+"\"",
-		"--ty", "\""+tFormatted+"\"",
+		"--tt", conf.Title,
+		"--ta", conf.Artist,
+		"--tl", conf.Album,
+		"--ty", tFormatted,
 		inFile,
 		outFile+".mp3")
 
@@ -146,6 +140,11 @@ func main() {
 
 	// Check for "simulation" mode flag, otherwise execute in sequence
 	if !*simulate {
+		// Check if WAV filename exists
+		if _, err := os.Stat(inFile); os.IsNotExist(err) {
+			fmt.Printf("The file '%s' does not exist in the recording directory.\n", args[0])
+			os.Exit(1)
+		}
 		err := opusTest.Run()
 		if err != nil {
 			log.Printf("I couldn't run opusenc :(\n%v\n", err)
