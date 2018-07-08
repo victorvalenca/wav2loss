@@ -28,39 +28,56 @@ type Configuration struct {
 }
 
 var (
-	conf     *Configuration
-	opusBin  string
-	lameBin  string
-	simulate = flag.Bool("simulate", false, "if set, no underlying commands will be run")
+	conf      *Configuration
+	opusBin   string
+	lameBin   string
+	simulate  = flag.Bool("simulate", false, "if set, no underlying commands will be run, and prints the command string instead")
+	directIn  = flag.String("in", "", "direct path to the input file")
+	directOut = flag.String("out", "", "direct path to the output directory")
 )
 
 func readConf() *Configuration {
-	viper.AddConfigPath(".")
+	// Get the path to the running executable so viper knows where to find the config file
+	here, err := os.Executable()
+	viper.AddConfigPath(filepath.Dir(here))
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 
 	// Read in YAML file
-	err := viper.ReadInConfig()
+	err = viper.ReadInConfig()
 	if err != nil {
 		fmt.Printf("Read Error: %v\n", err)
+		os.Exit(1)
 	}
 
 	conf := &Configuration{}
 	err = viper.Unmarshal(conf)
 	if err != nil {
 		fmt.Printf("Unable to parse configuration file into struct. %v", err)
+		os.Exit(1)
 	}
 
 	// Parse potential envars
-	switch conf.RecordDirectory[0] {
-	case '$', '%':
-		conf.RecordDirectory = os.Getenv(strings.Trim(conf.RecordDirectory, "$%"))
+	if *directIn == "" {
+		switch conf.RecordDirectory[0] {
+		case '$', '%':
+			if pathExists(conf.RecordDirectory) {
+				conf.RecordDirectory = os.Getenv(strings.Trim(conf.RecordDirectory, "$%"))
+			}
+		}
+	} else {
+		conf.RecordDirectory = *directIn
 	}
-	switch conf.OutputDirectory[0] {
-	case '$', '%':
-		conf.OutputDirectory = os.Getenv(strings.Trim(conf.OutputDirectory, "$%"))
+	if *directOut == "" {
+		switch conf.OutputDirectory[0] {
+		case '$', '%':
+			if pathExists(conf.RecordDirectory) {
+				conf.OutputDirectory = os.Getenv(strings.Trim(conf.OutputDirectory, "$%"))
+			}
+		}
+	} else {
+		conf.OutputDirectory = *directOut
 	}
-
 	return conf
 }
 
@@ -72,6 +89,18 @@ func init() {
 		fmt.Printf("Configuration Check failed. Exiting...\n---\n")
 		os.Exit(1)
 	}
+}
+
+// A check function to determine if a path is valid
+func pathExists(pathName string) bool {
+	_, err := os.Stat(pathName)
+	if err == nil {
+		return true
+	}
+	if os.IsNotExist(err) {
+		return false
+	}
+	return true
 }
 
 func systemCheck() bool {
@@ -103,9 +132,8 @@ func main() {
 	flag.Parse()
 
 	var args = flag.Args()
-	if len(args) < 1 {
-		fmt.Printf("No File Given. Exiting...\n" +
-			"USAGE: wav2loss [-simulate] filename_in_recording_directory.wav")
+	if len(args) < 1 && len(*directIn) < 1 {
+		fmt.Printf("No File(s) Given. Exiting...\nUSAGE:\n\twav2loss [-simulate] filename_in_recording_directory.wav\nOr with direct filepaths:\n\twav2loss [-simulate] [-in='path/to/input/file'] [-out='path/to/output/directory']")
 		os.Exit(1)
 	}
 
@@ -113,8 +141,14 @@ func main() {
 	t := time.Now()
 	tFormatted := t.UTC().Format("2006-01-02")
 	trimFile := strings.Replace(conf.Title, " ", "_", -1)
-	outFile := filepath.Join(conf.OutputDirectory, trimFile+"_"+tFormatted)
-	inFile := filepath.Join(conf.RecordDirectory, args[0])
+	inFile := *directIn
+	outFile := filepath.Join(*directOut, trimFile+"_"+tFormatted)
+	if *directIn == "" {
+		inFile = filepath.Join(conf.RecordDirectory, args[0])
+	}
+	if *directOut == "" {
+		outFile = filepath.Join(conf.OutputDirectory, trimFile+"_"+tFormatted)
+	}
 
 	opusTest := exec.Command(opusBin,
 		"--bitrate", conf.OpusBitrate,
@@ -141,7 +175,7 @@ func main() {
 	// Check for "simulation" mode flag, otherwise execute in sequence
 	if !*simulate {
 		// Check if WAV filename exists
-		if _, err := os.Stat(inFile); os.IsNotExist(err) {
+		if !pathExists(filepath.Dir(conf.RecordDirectory)) {
 			fmt.Printf("The file '%s' does not exist in the recording directory.\n", args[0])
 			os.Exit(1)
 		}
